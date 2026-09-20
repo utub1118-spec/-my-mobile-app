@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.example.myapp" version="1.0.0" xmlns="http://w3.org">
+    <name>My HTML App</name>
+    <description>Моё локальное HTML приложение</description>
+    <author email="dev@example.com">Ваше Имя</author>
+    <content src="index.html" />
+    <preference name="AllowInlineMediaPlayback" value="true" />
+</widget>
