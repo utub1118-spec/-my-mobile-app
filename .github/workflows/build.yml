@@ -18,6 +18,11 @@ jobs:
       - name: Install Cordova
         run: npm install -g cordova
 
+      - name: Prepare Files
+        run: |
+          mkdir www
+          cp index.html www/
+
       - name: Create iOS Project
         run: |
           cordova platform add ios
