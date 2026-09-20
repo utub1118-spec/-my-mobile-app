@@ -1,44 +1,58 @@
-name: Build Unsigned IPA
+name: Inject Menu Into Standoff 2 0.39.2
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  inject_and_build:
     runs-on: macos-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
-      - name: Install Cordova
+      - name: Install Cordova Tool
         run: npm install -g cordova
 
-      - name: Prepare Files
+      - name: Download Original Game IPA
         run: |
-          mkdir www
-          cp index.html www/
+          curl -L -o target_game.ipa "https://archive.org/download/ap-standoff-2-0.39.2/%5BAP%5D%20Standoff%202%20%280.39.2%29.ipa"
 
-      - name: Create iOS Project
+      - name: Unpack Game and Inject HTML Menu
+        run: |
+          unzip target_game.ipa -d game_unpacked
+          mkdir -p www
+          # Копируем ваш настроенный премиум index.html из репозитория
+          cp index.html www/index.html
+          
+      - name: Cordova Create iOS Container
         run: |
           cordova platform add ios
+          cp -r www/* platforms/ios/www/ 2>/dev/null || true
+
+      - name: Merge Menu with Standoff 2 App Payload
+        run: |
+          # Внедряем веб-интерфейс в структуру оригинального Payload игры
+          mkdir -p game_unpacked/Payload/*.app/www
+          cp -r www/* game_unpacked/Payload/*.app/www/ 2>/dev/null || true
+
+      - name: Rebuild Signed Package Framework
+        run: |
           cd platforms/ios
           xcodebuild archive -workspace *.xcworkspace -scheme "My Html App" -archivePath unsigned.xcarchive -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-      - name: Package to IPA
+      - name: Final Package to Finished IPA
         run: |
-          cd platforms/ios/unsigned.xcarchive/Products/Applications/
-          mkdir Payload
-          cp -r *.app Payload/
-          zip -r my-app.ipa Payload
-          mv my-app.ipa ../../../../../
+          cd game_unpacked
+          zip -r standoff2-modded.ipa Payload
+          mv standoff2-modded.ipa ../
 
-      - name: Upload Finished IPA
+      - name: Upload Finished Modded App
         uses: actions/upload-artifact@v4
         with:
-          name: iOS-Unsigned-App
-          path: my-app.ipa
+          name: Standoff2-With-iPA-Client
+          path: standoff2-modded.ipa
