@@ -1,1 +1,235 @@
-<script>const databaseKeys=["iPAclient-7mK9vX4z-2pQW-Lm81","iPAclient-Fj38sN2x-9wRt-Pq65","iPAclient-3vB5kL8z-1mXy-Tn42","iPAclient-Hh92jW6x-4vC8-Zz19","iPAclient-Gg71nT5z-3pQ3-kB84","iPAclient-4mS67wX2-fL42-kZ55","iPAclient-8hP91vM3-cC55-xT78","iPAclient-2gR78nY4-jW23-kB49","iPAclient-5vQ49tM1-lK62-zX33","iPAclient-Xz84Xq2w-K29v-Lm71","iPAclient-9tR71tP4-fB53-kM92","iPAclient-6vC48xZ1-gT61-nY35","iPAclient-3jD72mW5-lZ19-vF84","iPAclient-7xK84tP2-bN33-qR67","iPAclient-1fL42kZ5-hP91-vM55","iPAclient-8cC55xT3-gR78-nY23","iPAclient-4jW23kB9-vQ49-tM62","iPAclient-2lK62zX5-7mK9-vX38","iPAclient-Fj38sN2x-9wRt-Pq11","iPAclient-3vB5kL8z-1mXy-Tn99"];let aimbotEnabled=!1,isKeyActivated=!1,timerInterval=null;function handleIconClick(){isKeyActivated?(document.getElementById("start-icon-screen").style.display="none",document.getElementById("main-app").style.display="block",document.getElementById("mainMenu").style.display="flex"):(document.getElementById("start-icon-screen").style.display="none",document.getElementById("auth-screen").style.display="flex")}function validateAppKey(){const e=document.getElementById("app-license-key"),t=document.getElementById("auth-error"),n=e.value.trim();if(databaseKeys.includes(n)){isKeyActivated=!0;sessionStorage.setItem("ipa_authed","true");document.getElementById("auth-screen").style.display="none";document.getElementById("main-app").style.display="block";document.getElementById("mainMenu").style.display="flex";startLicenseTimer()}else{t.innerText="Неверный ключ доступа!",e.style.borderColor="#ff453a",setTimeout(()=>{t.innerText="",e.style.borderColor="var(--theme-color)"},3000)}}function switchTab(e,t){document.querySelectorAll(".tab-content").forEach(e=>e.classList.remove("active")),document.querySelectorAll(".nav-item").forEach(e=>e.classList.remove("active")),document.getElementById(e).classList.add("active"),t.classList.add("active")}function closeMenu(){document.getElementById("mainMenu").style.display="none",document.getElementById("main-app").style.display="block",document.getElementById("start-icon-screen").style.display="flex"}function toggleAim(e){e.classList.toggle('enabled'),aimbotEnabled=e.classList.contains('enabled'),document.getElementById("fovCircle").style.display=aimbotEnabled?"block":"none"}function toggleCard(e){e.classList.toggle('enabled')}function updateSlider(e,t,n=""){document.getElementById(e).innerText=t+n}function updateFovSize(e){const t=document.getElementById("fovCircle");t.style.width=e+"px",t.style.height=e+"px"}function setThemeColor(e,t,n,b){const o=document.documentElement;o.style.setProperty("--theme-color",e);o.style.setProperty("--theme-bg",t);o.style.setProperty("--theme-glow",n);o.style.setProperty("--body-bg",b);document.querySelectorAll(".svg-stroke").forEach(t=>t.setAttribute("stroke",e));document.querySelectorAll(".svg-fill").forEach(t=>t.setAttribute("fill",e))}function startLicenseTimer(){let e=localStorage.getItem("ipa_expire_time");e||(e=Date.now()+2592000000,localStorage.setItem("ipa_expire_time",e)),clearInterval(timerInterval),timerInterval=setInterval(function(){const t=e-Date.now();if(t<=0)return document.getElementById("menuTimer").innerText="Expired",void clearInterval(timerInterval);const n=Math.floor(t/86400000),o=Math.floor(t%86400000/3600000),l=Math.floor(t%3600000/60000),i=Math.floor(t%60000/1000);document.getElementById("menuTimer").innerText=n+"d "+String(o).padStart(2,"0")+"h "+String(l).padStart(2,"0")+"m "+String(i).padStart(2,"0")+"s"},1000)}function bindDrag(e,t){let n=0,o=0,l=0,i=0,s=!1;t.addEventListener("pointerdown",function(c){if(!c.target.closest(".close-btn")&&!c.target.closest("input")&&!c.target.closest(".nav-item")&&!c.target.closest(".range-slider")&&!c.target.closest(".color-btn")){s=!1;l=c.clientX-e.offsetLeft;i=c.clientY-e.offsetTop;t.setPointerCapture(c.pointerId);t.addEventListener("pointermove",u);t.addEventListener("pointerup",d)}});function u(t){s=!0;n=t.clientX-l;o=t.clientY-i;if(n<0)n=0;if(o<0)o=0;if(n+e.offsetWidth>window.innerWidth)n=window.innerWidth-e.offsetWidth;if(o+e.offsetHeight>window.innerHeight)o=window.innerHeight-e.offsetHeight;e.style.left=n+"px";e.style.top=o+"px";e.style.transform="none"}function d(e){t.removeEventListener("pointermove",u);t.removeEventListener("pointerup",d);if(!s)handleIconClick()}}function bindResizeJoystick(e,t){let n=0,o=0,l=0,i=0;t.addEventListener("pointerdown",function(c){c.stopPropagation();n=e.offsetWidth;o=e.offsetHeight;l=c.clientX;i=c.clientY;t.setPointerCapture(c.pointerId);t.addEventListener("pointermove",s);t.addEventListener("pointerup",a)});function s(t){const c=n+(t.clientX-l),s=o+(t.clientY-i);if(c>=260&&e.offsetLeft+c<=window.innerWidth)e.style.width=c+"px";if(s>=200&&e.offsetTop+s<=window.innerHeight)e.style.height=s+"px"}function a(e){t.removeEventListener("pointermove",s);t.removeEventListener("pointerup",a)}}const menuIcon=document.getElementById("menuIcon"),mainMenu=document.getElementById("mainMenu"),menuDragHandle=document.getElementById("menuDragHandle"),menuResizeHandle=document.getElementById("menuResizeHandle");bindDrag(menuIcon,menuIcon);bindDrag(mainMenu,menuDragHandle);bindResizeJoystick(mainMenu,menuResizeHandle);window.onload=function(){if(sessionStorage.getItem("ipa_authed")==="true"){isKeyActivated=true;startLicenseTimer()}};</script></body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <title>iPA Client</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        :root { --theme-color: #a256ff; --theme-bg: rgba(162, 86, 255, 0.03); --theme-glow: rgba(162, 86, 255, 0.3); --body-bg: radial-gradient(circle, #1a1126 0%, #060608 100%); }
+        body { background: var(--body-bg); margin: 0; padding: 0; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; width: 100vw; transition: background 0.3s; }
+        #start-icon-screen { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; position: absolute; z-index: 10; pointer-events: none; }
+        #auth-screen { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 20px; position: absolute; top: 0; left: 0; z-index: 9999; background: var(--body-bg); pointer-events: auto; }
+        .auth-container { text-align: center; width: 100%; max-width: 340px; background: var(--theme-bg); padding: 30px 20px; border-radius: 16px; backdrop-filter: blur(10px); border: 2px solid var(--theme-color); box-shadow: 0 10px 30px var(--theme-glow); }
+        .logo-text { font-size: 28px; font-weight: 900; color: var(--theme-color); margin-bottom: 5px; letter-spacing: -0.5px; }
+        .sub-text { font-size: 13px; color: #b39ddb; margin-bottom: 25px; }
+        .input-field { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--theme-color); background: #121214; color: #fff; font-size: 14px; text-align: center; margin-bottom: 15px; outline: none; user-select: text; -webkit-user-select: text; }
+        .btn-submit { width: 100%; padding: 14px; border-radius: 10px; border: none; background: var(--theme-color); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .error-msg { color: #ff453a; font-size: 13px; margin-top: 10px; min-height: 18px; font-weight: bold; }
+        #main-app { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; }
+        .floating-icon { width: 70px; height: 70px; background: #fff; border-radius: 50%; border: 3px solid var(--theme-color); display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 20px var(--theme-glow); position: absolute; top: calc(50% - 35px); left: calc(50% - 35px); z-index: 999; touch-action: none; pointer-events: auto; }
+        .floating-icon svg { width: 38px; height: 38px; fill: var(--theme-color); pointer-events: none; }
+        .menu-container { background: #0c0c0f; width: 340px; height: 240px; min-width: 280px; min-height: 200px; border-radius: 14px; border: 2.5px solid var(--theme-color); display: none; overflow: visible; box-shadow: 0 0 25px var(--theme-glow); position: absolute; top: calc(50% - 120px); left: calc(50% - 170px); z-index: 1000; pointer-events: auto; }
+        .close-btn { position: absolute; top: 10px; right: 14px; color: var(--theme-color); font-size: 20px; cursor: pointer; font-weight: bold; z-index: 1010; }
+        .drag-handle { position: absolute; top: 10px; right: 44px; color: var(--theme-color); font-size: 20px; cursor: move; font-weight: bold; z-index: 1010; touch-action: none; padding: 0 5px; }
+        .size-joystick { position: absolute; bottom: -10px; right: -8px; width: 24px; height: 24px; background: var(--theme-color); border: 2px solid #fff; border-radius: 50%; z-index: 1020; cursor: se-resize; touch-action: none; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 10px var(--theme-glow); font-size: 10px; color: #fff; }
+        .sidebar { width: 105px; min-width: 95px; background: rgba(12, 12, 15, 0.75); backdrop-filter: blur(5px); padding: 8px; display: flex; flex-direction: column; border-right: 1px solid rgba(178, 141, 245, 0.15); height: 100%; border-radius: 12px 0 0 12px; }
+        .logo-section { display: flex; align-items: center; margin-bottom: 12px; }
+        .logo-box { background: var(--theme-bg); border: 1px solid var(--theme-color); padding: 2px 4px; border-radius: 4px; font-weight: bold; color: var(--theme-color); font-size: 9px; }
+        .logo-title-block { margin-left: 4px; display: flex; flex-direction: column; }
+        .logo-title { color: var(--theme-color); font-size: 9px; font-weight: bold; line-height: 9px; }
+        .logo-premium { color: var(--theme-color); font-size: 5px; font-weight: bold; letter-spacing: 0.2px; }
+        .nav-label { color: #b39ddb; font-size: 7px; font-weight: bold; margin-bottom: 4px; }
+        .nav-item { display: flex; align-items: center; color: #6b5d8c; padding: 5px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; margin-bottom: 3px; }
+        .nav-item.active { background: var(--theme-color); color: #fff; }
+        .nav-item span { margin-right: 4px; font-size: 10px; }
+        .safe-box { background: rgba(162, 86, 255, 0.08); padding: 4px; border-radius: 4px; margin-top: auto; border: 1px solid rgba(162, 86, 255, 0.2); }
+        .status-row { display: flex; align-items: center; color: var(--theme-color); font-size: 8px; font-weight: bold; }
+        .status-dot { color: #00ff66; margin-right: 3px; font-size: 8px; }
+        .timer-text { color: #b39ddb; font-size: 7px; font-weight: bold; margin-top: 2px; font-family: monospace; }
+        .content-area { flex: 1; padding: 10px; display: flex; flex-direction: column; overflow-y: auto; min-width: 0; background: rgba(12, 12, 15, 0.4); backdrop-filter: blur(5px); height: 100%; border-radius: 0 12px 12px 0; position: relative; }
+        .bg-avatar { position: absolute; top: 50%; left: 55%; transform: translate(-50%, -50%); width: 130px; height: 140px; opacity: 0.08; pointer-events: none; z-index: 0; transition: fill 0.3s, opacity 0.3s; }
+        .bg-avatar svg { width: 100%; height: 100%; fill: var(--theme-color); }
+        .tab-header h1 { color: var(--theme-color); font-size: 14px; margin: 0; font-weight: bold; position: relative; z-index: 1; }
+        .tab-header p { color: #6b5d8c; font-size: 8px; margin: 1px 0 8px 0; position: relative; z-index: 1; }
+        .section-label { color: #b39ddb; font-size: 7px; font-weight: bold; margin-bottom: 4px; position: relative; z-index: 1; }
+        .tab-content { display: none; position: relative; z-index: 1; }
+        .tab-content.active { display: block; }
+        .card-item { background: rgba(20, 20, 25, 0.7); border: 1px solid rgba(162, 86, 255, 0.15); padding: 6px 8px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; cursor: pointer; width: 100%; }
+        .card-text { display: flex; flex-direction: column; min-width: 0; padding-right: 4px; }
+        .card-title { color: #fff; font-size: 9px; font-weight: bold; }
+        .card-sub { color: #6b5d8c; font-size: 6px; margin-top: 1px; }
+        .toggle-switch { width: 22px; height: 12px; background: #1a1a22; border-radius: 8px; position: relative; flex-shrink: 0; border: 1px solid rgba(162, 86, 255, 0.3); transition: background-color .2s; }
+        .toggle-switch::after { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #6b5d8c; top: 1px; left: 1px; transition: transform 0.2s; }
+        .card-item.enabled { background: rgba(162, 86, 255, 0.05); border-color: var(--theme-color); }
+        .card-item.enabled .toggle-switch { background: var(--theme-color); border-color: var(--theme-color); box-shadow: 0 0 6px var(--theme-glow); }
+        .card-item.enabled .toggle-switch::after { transform: translateX(10px); background: #fff; }
+        .slider-group { margin-bottom: 8px; position: relative; z-index: 1; }
+        .slider-header { display: flex; justify-content: space-between; color: #b39ddb; font-size: 8px; margin-bottom: 2px; }
+        .slider-value { color: var(--theme-color); font-weight: bold; }
+        .range-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #1a1a22; border-radius: 2px; outline: none; border: 1px solid rgba(162, 86, 255, 0.2); }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--theme-color); cursor: pointer; }
+        .color-picker-group { display: flex; gap: 5px; margin-top: 5px; }
+        .color-btn { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 4px rgba(0,0,0,0.3); cursor: pointer; }
+        .fov-circle { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1.5px dashed var(--theme-color); border-radius: 50%; pointer-events: none; display: none; width: 120px; height: 120px; box-shadow: 0 0 10px var(--theme-glow); z-index: 9995; }
+    </style>
+</head>
+<body>
+    <div id="start-icon-screen">
+        <div class="floating-icon" id="menuIcon">
+            <svg viewBox="0 0 100 120">
+                <path d="M25 15 H60 L75 30 V95 H25 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" class="svg-stroke"/>
+                <path d="M60 15 V30 H75" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" class="svg-stroke"/>
+                <text x="50" y="70" font-size="26" font-family="Arial" font-weight="900" fill="currentColor" text-anchor="middle" class="svg-fill">iPA</text>
+                <text x="50" y="88" font-size="9" font-family="Arial" letter-spacing="1" fill="currentColor" text-anchor="middle" class="svg-fill">CLIENT</text>
+            </svg>
+        </div>
+    </div>
+    <div id="auth-screen">
+        <div class="auth-container">
+            <div class="logo-text" style="color:var(--theme-color)">@ipaclient</div>
+            <div class="sub-text">Система аутентификации iPA</div>
+            <input type="text" id="app-license-key" class="input-field" placeholder="ВВЕДИТЕ ЛИЦЕНЗИОННЫЙ КЛЮЧ" autocomplete="off">
+            <button class="btn-submit" onclick="validateAppKey()">Активировать</button>
+            <div id="auth-error" class="error-msg"></div>
+        </div>
+    </div>
+    <div id="main-app">
+        <div class="fov-circle" id="fovCircle"></div>
+        <div class="menu-container" id="mainMenu">
+            <div class="close-btn" onclick="closeMenu()">×</div>
+            <div class="drag-handle" id="menuDragHandle">👆</div>
+            <div class="size-joystick" id="menuResizeHandle">🔄</div>
+            <div style="display:flex;height:100%">
+                <div class="sidebar">
+                    <div class="logo-section">
+                        <div class="logo-box">iPA</div>
+                        <div class="logo-title-block"><span class="logo-title">iPA Client</span><span class="logo-premium">PREMIUM</span></div>
+                    </div>
+                    <div class="nav-label">NAVIGATION</div>
+                    <div class="nav-item active" onclick="switchTab('aim',this)"><span>🎯</span>Aim</div>
+                    <div class="nav-item" onclick="switchTab('esp',this)"><span>👁️</span>ESP</div>
+                    <div class="nav-item" onclick="switchTab('skins',this)"><span>👕</span>Skins</div>
+                    <div class="nav-item" onclick="switchTab('misc',this)"><span>⚡</span>Misc</div>
+                    <div class="nav-item" onclick="switchTab('configs',this)"><span>⚙️</span>Configs</div>
+                    <div class="safe-box">
+                        <div class="status-row"><span class="status-dot">●</span>Undetected</div>
+                        <div class="timer-text" id="menuTimer">30d 00h 00m</div>
+                    </div>
+                </div>
+                <div class="content-area">
+                    <div class="bg-avatar" id="bgAvatar">
+                        <svg viewBox="0 0 100 120">
+                            <path d="M30 20 H65 L80 35 V100 H30 Z" fill="none" stroke="currentColor" stroke-width="6"/>
+                            <path d="M65 20 V35 H80" fill="none" stroke="currentColor" stroke-width="6"/>
+                            <text x="55" y="72" font-size="24" font-weight="900" text-anchor="middle">iPA</text>
+                            <text x="55" y="88" font-size="8" letter-spacing="0.5" text-anchor="middle">CLIENT</text>
+                        </svg>
+                    </div>
+                    <div id="aim" class="tab-content active">
+                        <div class="tab-header"><h1>Aim</h1><p>Aimbot settings</p></div>
+                        <div class="section-label">LOCK OPTIONS</div>
+                        <div class="card-item" onclick="toggleAim(this)">
+                            <div class="card-text"><span class="card-title">Enable Aimbot</span><span class="card-sub">Automatic bone locking</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">Silent Aim</span><span class="card-sub">Invisible bullet redirection</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div style="margin-top:10px" class="slider-group">
+                            <div class="slider-header"><span>FOV Size</span><span class="slider-value" id="fov-val">120px</span></div>
+                            <input type="range" class="range-slider" min="20" max="300" value="120" oninput="updateSlider('fov-val',this.value,'px');updateFovSize(this.value)">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-header"><span>Aim Speed</span><span class="slider-value" id="speed-val">5</span></div>
+                            <input type="range" class="range-slider" min="1" max="10" value="5" oninput="updateSlider('speed-val',this.value)">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-header"><span>Smooth</span><span class="slider-value" id="smooth-val">2.5</span></div>
+                            <input type="range" class="range-slider" min="1" max="10" step="0.1" value="2.5" oninput="updateSlider('smooth-val',this.value)">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-header"><span>Hitbox Bone</span><span class="slider-value" id="bone-val">1</span></div>
+                            <input type="range" class="range-slider" min="1" max="3" value="1" oninput="updateSlider('bone-val',this.value)">
+                        </div>
+                    </div>
+                    <div id="esp" class="tab-content">
+                        <div class="tab-header"><h1>ESP</h1><p>Visual options</p></div>
+                        <div class="section-label">VISUALS</div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">Enable ESP Boxes</span><span class="card-sub">Draw 2D squares around players</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">Enable ESP Chams</span><span class="card-sub">Color filled custom textures</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">ESP Lines</span><span class="card-sub">Draw snaplines to targets</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">ESP Skeleton</span><span class="card-sub">Show player bone structures</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">ESP Health</span><span class="card-sub">Display targets health bars</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                    </div>
+                    <div id="skins" class="tab-content">
+                        <div class="tab-header"><h1>Skins</h1><p>Skinchanger settings</p></div>
+                        <div class="section-label">WEAPON SKINS</div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">Enable Skinchanger</span><span class="card-sub">Replace standard inventory models</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div style="margin-top:6px" class="slider-group">
+                            <div class="slider-header"><span>Weapon Skin ID</span><span class="slider-value" id="skin-val">1</span></div>
+                            <input type="range" class="range-slider" min="1" max="150" value="1" oninput="updateSlider('skin-val',this.value)">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-header"><span>Knife Type ID</span><span class="slider-value" id="knife-val">1</span></div>
+                            <input type="range" class="range-slider" min="1" max="15" value="1" oninput="updateSlider('knife-val',this.value)">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-header"><span>Glove Type ID</span><span class="slider-value" id="glove-val">1</span></div>
+                            <input type="range" class="range-slider" min="1" max="20" value="1" oninput="updateSlider('glove-val',this.value)">
+                        </div>
+                    </div>
+                    <div id="misc" class="tab-content">
+                        <div class="tab-header"><h1>Misc</h1><p>Exploits & modifications</p></div>
+                        <div class="section-label">FEATURES</div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">No Recoil</span><span class="card-sub">Remove gun shaking entirely</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">Speedhack</span><span class="card-sub">Boost moving acceleration</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="card-item" onclick="toggleCard(this)">
+                            <div class="card-text"><span class="card-title">Wallhack</span><span class="card-sub">Pass through hard materials</span></div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                    </div>
+                    <div id="configs" class="tab-content">
+                        <div class="tab-header"><h1>Configs</h1><p>Profiles & UI Theme</p></div>
+                        <div class="section-label">INTERFACE & BODY COLOR (RGB)</div>
+                        <div class="color-picker-group">
+                            <div class="color-btn" style="background:#a256ff" onclick="setThemeColor('#a256ff','rgba(162,86,255,0.05)','rgba(162,86,255,0.4)','radial-gradient(circle,#1a1126 0%,#060608 100%)')"></div>
+                            <div class="color-btn" style="background:#ff453a" onclick="setThemeColor('#ff453a','rgba(255,69,58,0.05)','rgba(255,69,58,0.4)','radial-gradient(circle,#2b0c0c 0%,#080404 100%)')"></div>
+```html
+    <script>
+        const databaseKeys=["iPAclient-7mK9vX4z-2pQW-Lm81","iPAclient-Fj38sN2x-9wRt-Pq65","iPAclient-3vB5kL8z-1mXy-Tn42","iPAclient-Hh92jW6x-4vC8-Zz19","iPAclient-Gg71nT5z-3pQ3-kB84","iPAclient-4mS67wX2-fL42-kZ55","iPAclient-8hP91vM3-cC55-xT78","iPAclient-2gR78nY4-jW23-kB49","iPAclient-5vQ49tM1-lK62-zX33","iPAclient-Xz84Xq2w-K29v-Lm71","iPAclient-9tR71tP4-fB53-kM92","iPAclient-6vC48xZ1-gT61-nY35","iPAclient-3jD72mW5-lZ19-vF84","iPAclient-7xK84tP2-bN33-qR67","iPAclient-1fL42kZ5-hP91-vM55","iPAclient-8cC55xT3-gR78-nY23","iPAclient-4jW23kB9-vQ49-tM62","iPAclient-2lK62zX5-7mK9-vX38","iPAclient-Fj38sN2x-9wRt-Pq11","iPAclient-3vB5kL8z-1mXy-Tn99"];
+        let aimbotEnabled = false, isKeyActivated = false, timerInterval = null;
+        
+        function handleIconClick() { if (isKeyActivated) { document.getElementById("start-icon-screen").style.display = "none"; document.getElementById("main-app").style.display = "block"; document.getElementById("mainMenu").style.display = "flex"; } else { document.getElementById("start-icon-screen").style.display = "none"; document.getElementById("auth-screen").style.display = "flex"; } }
+        function validateAppKey() { const e = document.getElementById("app-license-key"), t = document.getElementById("auth-error"), n = e.value.trim(); if (databaseKeys.includes(n)) { isKeyActivated = true; sessionStorage.setItem("ipa_authed", "true"); document.getElementById("auth-screen").style.display = "none"; document.getElementById("main-app").style.display = "block"; document.getElementById("mainMenu").style.display = "flex"; startLicenseTimer(); } else { t.innerText = "Неверный ключ доступа!"; e.style.borderColor = "#ff453a"; setTimeout(() => { t.innerText = ""; e.style.borderColor = "var(--theme-color)"; }, 3000); } }
+        function switchTab(e, t) { document.querySelectorAll(".tab-content").forEach(e => e.classList.remove("active")); document.querySelectorAll(".nav-item").forEach(e => e.classList.remove("active")); document.getElementById(e).classList.add("active"); t.classList.add("active"); }
+        function closeMenu() { document.getElementById("mainMenu").style.display = "none"; document.getElementById("main-app").style.display = "block"; document.getElementById("start-icon-screen").style.display = "flex"; }
+        function toggleAim(e) { e.classList.toggle('enabled'); aimbotEnabled = e.classList.contains('enabled'); document.getElementById("fovCircle").style.display = aimbotEnabled ? "block" : "none"; }
+        function toggleCard(e) { e.classList.toggle('enabled'); }
+        function updateSlider(e, t, n = "") { document.getElementById(e).innerText = t + n; }
+        function updateFovSize(e) { const t = document.getElementById("fovCircle"); t.style.width = e + "px"; t.style.height = e + "px"; }
+        function setThemeColor(e, t, n, b) { const o = document.documentElement; o.style.setProperty("--theme-color", e); o.style.setProperty("--theme-bg", t); o.style.setProperty("--theme-glow", n); o.style.setProperty("--body-bg", b); document.querySelectorAll(".svg-stroke").forEach(t => t.setAttribute("stroke", e)); document.querySelectorAll(".svg-fill").forEach(t => t.setAttribute("fill", e)); }
+        function startLicenseTimer() { let e = localStorage.getItem("ipa_expire_time"); e || (e = Date.now() + 2592000000, localStorage.setItem("ipa_expire_time", e)); clearInterval(timerInterval); timerInterval = setInterval(function () { const t = e - Date.now(); if (t <= 0) { document.getElementById("menuTimer").innerText = "Expired"; clearInterval(timerInterval); return; } const n = Math.floor(t / 86400000), o = Math.floor((t % 86400000) / 3600000), l = Math.floor((t % 3600000) / 60000), i = Math.floor((t % 60000) / 1000); document.getElementById("menuTimer").innerText = n + "d " + String(o).padStart(2, "0") + "h " + String(l).padStart(2, "0") + "m " + String(i).padStart(2, "0") + "s"; }, 1000); }
+        function bindDrag(e, t) { let n = 0, o = 0, l = 0, i = 0, s = false; t.addEventListener("pointerdown", function (c) { if (!c.target.closest(".close-btn") && !c.target.closest("input") && !c.target.closest(".nav-item") && !c.target.closest(".range-slider") && !c.target.closest(".color-btn")) { s = false; l = c.clientX - e.offsetLeft; i = c.clientY - e.offsetTop; t.setPointerCapture(c.pointerId); t.addEventListener("pointermove", u); t.addEventListener("pointerup", d); } }); function u(t) { s = true; n = t.clientX - l; o = t.clientY - i; if (n < 0) n = 0; if (o < 0) o = 0; if (n + e.offsetWidth > window.innerWidth) n = window.innerWidth - e.offsetWidth; if (o + e.offsetHeight > window.innerHeight) o = window.innerHeight - e.offsetHeight; e.style.left = n + "px"; e.style.top = o + "px"; e.style.transform = "none"; } function d(e) { t.removeEventListener("pointermove", u); t.removeEventListener("pointerup", d); if (!s) handleIconClick(); } }
+        function bindResizeJoystick(e, t) { let n = 0, o = 0, l = 0, i = 0; t.addEventListener("pointerdown", function (c) { c.stopPropagation(); n = e.offsetWidth; o = e.offsetHeight; l = c.clientX; i = c.clientY; t.setPointerCapture(c.pointerId); t.addEventListener("pointermove", s); t.addEventListener("pointerup", a); }); function s(t) { const c = n + (t.clientX - l), s = o + (t.clientY - i); if (c >= 260 && e.offsetLeft + c <= window.innerWidth) e.style.width = c + "px"; if (s >= 200 && e.offsetTop + s <= window.innerHeight) e.style.height = s + "px"; } function a(e) { t.removeEventListener("pointermove", s); t.removeEventListener("pointerup", a); } }
+        const menuIcon = document.getElementById("menuIcon"), mainMenu = document.getElementById("mainMenu"), menuDragHandle = document.getElementById("menuDragHandle"), menuResizeHandle = document.getElementById("menuResizeHandle");
+        bindDrag(menuIcon, menuIcon); bindDrag(mainMenu, menuDragHandle); bindResizeJoystick(mainMenu, menuResizeHandle);
+        window.onload = function () { if (sessionStorage.getItem("ipa_authed") === "true") { isKeyActivated = true; startLicenseTimer(); } };
+    </script>
+</body>
+</html>
