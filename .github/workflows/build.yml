@@ -1,0 +1,39 @@
+name: Build Unsigned IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Create iOS Project
+        run: |
+          cordova platform add ios
+          cd platforms/ios
+          xcodebuild archive -workspace *.xcworkspace -scheme "My Html App" -archivePath unsigned.xcarchive -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+
+      - name: Package to IPA
+        run: |
+          cd platforms/ios/unsigned.xcarchive/Products/Applications/
+          mkdir Payload
+          cp -r *.app Payload/
+          zip -r my-app.ipa Payload
+          mv my-app.ipa ../../../../../
+
+      - name: Upload Finished IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: iOS-Unsigned-App
+          path: my-app.ipa
