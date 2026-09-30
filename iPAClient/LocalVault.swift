@@ -1,6 +1,5 @@
 // language: Swift, file: LocalVault.swift, target: iOS 15+
-// безсерверное хранилище: AES-GCM, ключ в Keychain под биометрией,
-// всё лежит в Documents/.vault.dat, доступ только через LAContext
+// AES-GCM хранилище, ключ в Keychain с biometryCurrentSet, доступ через Face ID
 
 import Foundation
 import CryptoKit
@@ -19,9 +18,7 @@ final class LocalVault {
         return docs.appendingPathComponent(vaultName)
     }
 
-    // MARK: - Публичный интерфейс
-
-    /// Сохранить запись (feature + payload). Вызывается из ViewController без биометрии — данные пишутся фоном.
+    // MARK: - Store (без биометрии — данные пишутся фоном)
     func store(feature: String, payload: [String: Any], completion: ((Bool) -> Void)? = nil) {
         lockQueue.async {
             var all = self.readRaw() ?? []
@@ -35,7 +32,7 @@ final class LocalVault {
         }
     }
 
-    /// Прочитать всё — требует Face ID.
+    // MARK: - Read all (Face ID)
     func readAll(completion: @escaping ([[String: Any]]?) -> Void) {
         authenticate { ok in
             guard ok else { completion(nil); return }
@@ -46,7 +43,7 @@ final class LocalVault {
         }
     }
 
-    /// Экспорт в Documents/export.json (открытый файл для вытаскивания по кабелю).
+    // MARK: - Export (Face ID)
     func exportToDocuments(completion: @escaping (URL?) -> Void) {
         authenticate { ok in
             guard ok else { completion(nil); return }
@@ -65,7 +62,6 @@ final class LocalVault {
         }
     }
 
-    /// Стереть всё.
     func wipe() {
         lockQueue.async {
             try? FileManager.default.removeItem(at: self.vaultURL)
@@ -73,33 +69,33 @@ final class LocalVault {
         }
     }
 
-    // MARK: - Биометрия
-
+    // MARK: - Biometrics
     private func authenticate(_ cb: @escaping (Bool) -> Void) {
         let ctx = LAContext()
-        ctx.localizedReason = "Доступ к собранным данным"
         var err: NSError?
         guard ctx.canEvaluatePolicy(.deviceOwnerAuthentication, error: &err) else {
             cb(false); return
         }
-        ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Доступ к собранным данным") { ok, _ in
+        ctx.evaluatePolicy(.deviceOwnerAuthentication,
+                           localizedReason: "Доступ к собранным данным") { ok, _ in
             cb(ok)
         }
     }
 
-    // MARK: - Ключ AES-GCM в Keychain
-
+    // MARK: - Keychain key
     private func loadOrCreateKey() -> SymmetricKey? {
         if let existing = loadKey() { return existing }
         let key = SymmetricKey(size: .bits256)
         let data = key.withUnsafeBytes { Data($0) }
-        let q: [String: Any] = [
+        var q: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: keyTag,
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-            kSecAttrAccessControl as String: secAccessControl()
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
+        if let ac = secAccessControl() {
+            q[kSecAttrAccessControl as String] = ac
+        }
         SecItemDelete(q as CFDictionary)
         guard SecItemAdd(q as CFDictionary, nil) == errSecSuccess else { return nil }
         return key
@@ -135,8 +131,7 @@ final class LocalVault {
         )
     }
 
-    // MARK: - Чтение/запись зашифрованного файла
-
+    // MARK: - Raw read/write
     private func readRaw() -> [[String: Any]]? {
         guard FileManager.default.fileExists(atPath: vaultURL.path),
               let blob = try? Data(contentsOf: vaultURL),
