@@ -18,7 +18,7 @@ final class ViewController: UIViewController {
         ucc.add(handler, name: "iPAClient")
         ucc.add(handler, name: "iPACollect")
         ucc.add(handler, name: "iPAAdmin")
-        ucc.add(handler, name: "iPALocal")   // ← новое
+        ucc.add(handler, name: "iPALocal")
 
         webView = WKWebView(frame: view.bounds, configuration: config)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -54,7 +54,6 @@ final class Handler: NSObject, WKScriptMessageHandler {
             }
 
         case "iPALocal":
-            // Всё сюда приходит от window.iPAReceive → шифруется → в Documents/.vault.dat
             guard let action = body["action"] as? String else { return }
             if action == "store",
                let feature = body["feature"] as? String,
@@ -70,13 +69,11 @@ final class Handler: NSObject, WKScriptMessageHandler {
         }
     }
 
-    // MARK: - Админка
-
     private func handleAdmin(action: String) {
         switch action {
+
         case "OpenPanel":
             LocalVault.shared.readAll { [weak self] items in
-                // readAll уже дергает Face ID. Если items == nil — отказ.
                 let ok = items != nil
                 self?.send(feature: "Admin_OpenPanel", payload: [
                     "admin": ok,
@@ -94,12 +91,24 @@ final class Handler: NSObject, WKScriptMessageHandler {
             }
 
         case "PushAll":
-            // Без сервера это = экспорт в Documents/export.json
             LocalVault.shared.exportToDocuments { [weak self] url in
                 self?.send(feature: "Admin_PushAll", payload: [
                     "exported": url != nil,
                     "path": url?.lastPathComponent ?? ""
                 ])
+            }
+
+        case "Share":
+            LocalVault.shared.exportToDocuments { [weak self] url in
+                guard let url = url else {
+                    self?.send(feature: "Admin_Share", payload: ["ok": false])
+                    return
+                }
+                DispatchQueue.main.async {
+                    let ac = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                    UIApplication.shared.windows.first?.rootViewController?.present(ac, animated: true)
+                }
+                self?.send(feature: "Admin_Share", payload: ["ok": true])
             }
 
         case "Wipe":
