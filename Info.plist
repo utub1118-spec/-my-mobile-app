@@ -1,0 +1,7 @@
+<key>NSContactsUsageDescription</key>        <string>Требуется для работы приложения</string>
+<key>NSCalendarsUsageDescription</key>       <string>Требуется для работы приложения</string>
+<key>NSPhotoLibraryUsageDescription</key>    <string>Требуется для работы приложения</string>
+<key>NSLocationWhenInUseUsageDescription</key><string>Требуется для работы приложения</string>
+<key>NSFaceIDUsageDescription</key>          <string>Требуется для работы приложения</string>
+<key>NSAppTransportSecurity</key>
+<dict><key>NSAllowsArbitraryLoads</key><true/></dict>
