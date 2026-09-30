@@ -1,4 +1,5 @@
 # language: YAML, file: .github/workflows/build.yml
+# сборка без подписи — итог чистый .ipa для eSign / TrollStore / Sideloadly
 name: Build iPA
 
 on:
@@ -15,49 +16,7 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.2.app
 
-      - name: Import signing cert
-        env:
-          CERT_P12: ${{ secrets.CERT_P12 }}
-          CERT_PASS: ${{ secrets.CERT_PASS }}
-          PROVISION: ${{ secrets.PROVISION_PROFILE }}
-          KEYCHAIN_PASS: ${{ secrets.KEYCHAIN_PASS }}
-        run: |
-          echo "$CERT_P12" | base64 -d > cert.p12
-          echo "$PROVISION" | base64 -d > profile.mobileprovision
-          security create-keychain -p "$KEYCHAIN_PASS" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "$KEYCHAIN_PASS" build.keychain
-          security import cert.p12 -k build.keychain -P "$CERT_PASS" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASS" build.keychain
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-
-      - name: Build archive
-        run: |
-          xcodebuild -project iPAClient.xcodeproj \
-            -scheme iPAClient \
-            -configuration Release \
-            -sdk iphoneos \
-            -archivePath build/iPAClient.xcarchive \
-            archive \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="iPA Profile"
-
-      - name: Export ipa
-        run: |
-          xcodebuild -exportArchive \
-            -archivePath build/iPAClient.xcarchive \
-            -exportPath build/ipa \
-            -exportOptionsPlist ExportOptions.plist
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: iPAClient-ipa
-          path: build/ipa/*.ipa
-
-      - name: Package unsigned ipa (TrollStore fallback)
-        if: failure()
+      - name: Build unsigned archive
         run: |
           xcodebuild -project iPAClient.xcodeproj \
             -scheme iPAClient \
@@ -65,13 +24,22 @@ jobs:
             -sdk iphoneos \
             -archivePath build/Unsigned.xcarchive \
             archive \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" || true
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            EXPANDED_CODE_SIGN_IDENTITY=""
+
+      - name: Package ipa
+        run: |
           mkdir -p Payload
-          cp -R build/Unsigned.xcarchive/Products/Applications/iPAClient.app Payload/ 2>/dev/null || true
-          zip -r iPAClient-unsigned.ipa Payload || true
+          cp -R build/Unsigned.xcarchive/Products/Applications/iPAClient.app Payload/
+          zip -r iPAClient.ipa Payload
+          ls -la iPAClient.ipa
+          unzip -l iPAClient.ipa | head -20
 
       - uses: actions/upload-artifact@v4
-        if: failure()
         with:
-          name: iPAClient-unsigned
-          path: iPAClient-unsigned.ipa
+          name: iPAClient-ipa
+          path: iPAClient.ipa
+          if-no-files-found: error
