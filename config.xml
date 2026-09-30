@@ -1,9 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<widget id="com.mycompany.localhtmlapp" version="1.0.0" xmlns="http://w3.org">
-    <name>My Html App</name>
-    <description>Приложение из локального HTML файла</description>
-    <author email="dev@example.com">Developer</author>
-    <!-- Указываем, что index.html лежит прямо в корне -->
-    <content src="index.html" />
-    <preference name="AllowInlineMediaPlayback" value="true" />
-</widget>
