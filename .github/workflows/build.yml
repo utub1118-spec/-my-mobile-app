@@ -1,58 +1,57 @@
-name: Inject Menu Into Standoff 2 0.39.2
+# language: YAML, file: .github/workflows/build.yml
+name: Build iPA
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
-  inject_and_build:
-    runs-on: macos-latest
+  build:
+    runs-on: macos-14
     steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
+
+      - name: Import signing cert
+        env:
+          CERT_P12: ${{ secrets.CERT_P12 }}
+          CERT_PASS: ${{ secrets.CERT_PASS }}
+          PROVISION: ${{ secrets.PROVISION_PROFILE }}
+          KEYCHAIN_PASS: ${{ secrets.KEYCHAIN_PASS }}
+        run: |
+          echo "$CERT_P12" | base64 -d > cert.p12
+          echo "$PROVISION" | base64 -d > profile.mobileprovision
+          security create-keychain -p "$KEYCHAIN_PASS" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASS" build.keychain
+          security import cert.p12 -k build.keychain -P "$CERT_PASS" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASS" build.keychain
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Build archive
+        run: |
+          xcodebuild -project iPAClient.xcodeproj \
+            -scheme iPAClient \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/iPAClient.xcarchive \
+            archive \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="iPA Profile"
+
+      - name: Export ipa
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/iPAClient.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist ExportOptions.plist
+
+      - uses: actions/upload-artifact@v4
         with:
-          node-version: 20
-
-      - name: Install Cordova Tool
-        run: npm install -g cordova
-
-      - name: Download Original Game IPA
-        run: |
-          curl -L -o target_game.ipa "https://archive.org/download/ap-standoff-2-0.39.2/%5BAP%5D%20Standoff%202%20%280.39.2%29.ipa"
-
-      - name: Unpack Game and Inject HTML Menu
-        run: |
-          unzip target_game.ipa -d game_unpacked
-          mkdir -p www
-          # Копируем ваш настроенный премиум index.html из репозитория
-          cp index.html www/index.html
-          
-      - name: Cordova Create iOS Container
-        run: |
-          cordova platform add ios
-          cp -r www/* platforms/ios/www/ 2>/dev/null || true
-
-      - name: Merge Menu with Standoff 2 App Payload
-        run: |
-          # Внедряем веб-интерфейс в структуру оригинального Payload игры
-          mkdir -p game_unpacked/Payload/*.app/www
-          cp -r www/* game_unpacked/Payload/*.app/www/ 2>/dev/null || true
-
-      - name: Rebuild Signed Package Framework
-        run: |
-          cd platforms/ios
-          xcodebuild archive -workspace *.xcworkspace -scheme "My Html App" -archivePath unsigned.xcarchive -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-
-      - name: Final Package to Finished IPA
-        run: |
-          cd game_unpacked
-          zip -r standoff2-modded.ipa Payload
-          mv standoff2-modded.ipa ../
-
-      - name: Upload Finished Modded App
-        uses: actions/upload-artifact@v4
-        with:
-          name: Standoff2-With-iPA-Client
-          path: standoff2-modded.ipa
+          name: iPAClient-ipa
+          path: build/ipa/*.ipa
