@@ -10,6 +10,7 @@
     A100000000000000000002 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000002; };
     A100000000000000000003 /* DataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000003; };
     A100000000000000000004 /* AdminServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000004; };
+    A100000000000000000006 /* LocalVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000007; };
     A100000000000000000005 /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = A200000000000000000005; };
 /* End PBXBuildFile section */
 
@@ -18,6 +19,7 @@
     A200000000000000000002 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
     A200000000000000000003 /* DataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataCollector.swift; sourceTree = "<group>"; };
     A200000000000000000004 /* AdminServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminServer.swift; sourceTree = "<group>"; };
+    A200000000000000000007 /* LocalVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalVault.swift; sourceTree = "<group>"; };
     A200000000000000000005 /* index.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
     A200000000000000000006 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
     A300000000000000000001 /* iPAClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iPAClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -39,6 +41,7 @@
         A200000000000000000002,
         A200000000000000000003,
         A200000000000000000004,
+        A200000000000000000007,
         A400000000000000000004 /* Web */,
         A200000000000000000006,
       );
@@ -111,6 +114,7 @@
         A100000000000000000002,
         A100000000000000000003,
         A100000000000000000004,
+        A100000000000000000006,
       );
       runOnlyForDeploymentPostprocessing = 0;
     };
