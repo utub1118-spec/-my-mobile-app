@@ -16,10 +16,23 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.2.app
 
+      - name: Show project
+        run: |
+          echo "=== files ==="
+          ls -la
+          echo "=== iPAClient ==="
+          ls -la iPAClient/
+          echo "=== Web ==="
+          ls -la iPAClient/Web/ || true
+          echo "=== xcodeproj ==="
+          ls -la iPAClient.xcodeproj/
+          echo "=== targets ==="
+          xcodebuild -project iPAClient.xcodeproj -list || true
+
       - name: Build unsigned archive
         run: |
           xcodebuild -project iPAClient.xcodeproj \
-            -scheme iPAClient \
+            -target iPAClient \
             -configuration Release \
             -sdk iphoneos \
             -archivePath build/Unsigned.xcarchive \
@@ -28,17 +41,20 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGN_ENTITLEMENTS="" \
-            EXPANDED_CODE_SIGN_IDENTITY=""
+            EXPANDED_CODE_SIGN_IDENTITY="" \
+            ALWAYS_SEARCH_USER_PATHS=NO
 
       - name: Package ipa
+        if: success()
         run: |
           mkdir -p Payload
           cp -R build/Unsigned.xcarchive/Products/Applications/iPAClient.app Payload/
           zip -r iPAClient.ipa Payload
           ls -la iPAClient.ipa
-          unzip -l iPAClient.ipa | head -20
+          unzip -l iPAClient.ipa | head -30
 
       - uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: iPAClient-ipa
           path: iPAClient.ipa
