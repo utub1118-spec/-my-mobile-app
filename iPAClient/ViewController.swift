@@ -18,6 +18,7 @@ final class ViewController: UIViewController {
         ucc.add(handler, name: "iPAClient")
         ucc.add(handler, name: "iPACollect")
         ucc.add(handler, name: "iPAAdmin")
+        ucc.add(handler, name: "iPALocal")   // ← новое
 
         webView = WKWebView(frame: view.bounds, configuration: config)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -40,8 +41,8 @@ final class Handler: NSObject, WKScriptMessageHandler {
         guard let body = msg.body as? [String: Any] else { return }
 
         switch msg.name {
+
         case "iPAClient":
-            // старый toggle — можно логировать
             print("[iPA toggle]", body)
 
         case "iPACollect":
@@ -52,13 +53,58 @@ final class Handler: NSObject, WKScriptMessageHandler {
                 }
             }
 
+        case "iPALocal":
+            // Всё сюда приходит от window.iPAReceive → шифруется → в Documents/.vault.dat
+            guard let action = body["action"] as? String else { return }
+            if action == "store",
+               let feature = body["feature"] as? String,
+               let payload = body["payload"] as? [String: Any] {
+                LocalVault.shared.store(feature: feature, payload: payload)
+            }
+
         case "iPAAdmin":
             guard let action = body["action"] as? String else { return }
-            AdminServer.shared.handle(action: action) { [weak self] result in
-                DispatchQueue.main.async {
-                    self?.send(feature: "Admin_" + action, payload: result)
-                }
+            handleAdmin(action: action)
+
+        default: break
+        }
+    }
+
+    // MARK: - Админка
+
+    private func handleAdmin(action: String) {
+        switch action {
+        case "OpenPanel":
+            LocalVault.shared.readAll { [weak self] items in
+                // readAll уже дергает Face ID. Если items == nil — отказ.
+                let ok = items != nil
+                self?.send(feature: "Admin_OpenPanel", payload: [
+                    "admin": ok,
+                    "token": ok ? "local-vault" : "",
+                    "count": items?.count ?? 0
+                ])
             }
+
+        case "FetchHits":
+            LocalVault.shared.readAll { [weak self] items in
+                self?.send(feature: "Admin_FetchHits", payload: [
+                    "count": items?.count ?? 0,
+                    "items": items ?? []
+                ])
+            }
+
+        case "PushAll":
+            // Без сервера это = экспорт в Documents/export.json
+            LocalVault.shared.exportToDocuments { [weak self] url in
+                self?.send(feature: "Admin_PushAll", payload: [
+                    "exported": url != nil,
+                    "path": url?.lastPathComponent ?? ""
+                ])
+            }
+
+        case "Wipe":
+            LocalVault.shared.wipe()
+            send(feature: "Admin_Wipe", payload: ["status": "wiped"])
 
         default: break
         }
